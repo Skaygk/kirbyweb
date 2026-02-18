@@ -151,6 +151,41 @@ html,body
 {
 background-attachment:scroll;
 }
+img.stack-img
+{
+max-width:40vw;
+}
+img.kirby
+{
+max-width:44vw;
+}
+.static-img
+{
+max-width:36vw;
+}
+#topBubble
+{
+left:12px !important;
+right:12px !important;
+top:12px !important;
+max-width:none !important;
+font-size:18px;
+padding:6px 8px;
+}
+.fade-text
+{
+font-size:14px;
+}
+.heart
+{
+font-size:16px;
+}
+#playBgBtn
+{
+left:8px !important;
+bottom:8px !important;
+padding:10px !important;
+}
 }
 </style>
 </head>
@@ -174,8 +209,17 @@ var topZ = 200;
 function placeStackLeftToRight()
 {
 var vw = window.innerWidth;
-var baseLeft = Math.round(vw * 0.06);
-var gap = Math.round(vw * 0.09);
+var baseLeft, gap;
+if(vw <= 600)
+{
+	baseLeft = Math.round(vw * 0.04);
+	gap = Math.round(vw * 0.18);
+}
+else
+{
+	baseLeft = Math.round(vw * 0.06);
+	gap = Math.round(vw * 0.09);
+}
 imgs.forEach(function(img,i)
 {
 img.style.position = 'fixed';
