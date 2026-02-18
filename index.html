@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kirby</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Modak&family=Rubik+Spray+Paint&display=swap');
+html,body
+{
+min-height:100vh;
+margin:0;
+background-color:#ffffff;
+transition:background-color 450ms ease;
+}
+body
+{
+display:flex;
+align-items:flex-start;
+justify-content:flex-start;
+font-family:Arial,Helvetica,sans-serif;
+color:#222;
+padding-top:20px;
+}
+img.kirby
+{
+position:fixed;
+z-index:100;
+max-width:60vw;
+height:auto;
+display:block;
+transition:transform 0.35s ease,left 0.35s ease,top 0.35s ease;
+}
+img.stack-img
+{
+position:fixed;
+max-width:16vw;
+height:auto;
+opacity:0.75;
+transition:transform 0.45s cubic-bezier(.2,.9,.2,1), left 0.35s ease, top 0.35s ease, box-shadow 0.35s ease;
+border-radius:12px;
+box-shadow:0 8px 18px rgba(0,0,0,0.15);
+}
+@media (min-width:800px)
+{
+img.stack-img
+{
+max-width:10vw;
+}
+}
+img.stack-img.front
+{
+transform:scale(1.02);
+box-shadow:0 22px 48px rgba(0,0,0,0.36);
+opacity:1;
+}
+.static-img
+{
+position:fixed;
+max-width:18vw;
+height:auto;
+border-radius:8px;
+box-shadow:none;
+transition:none;
+z-index:45;
+}
+.top-bubble-style
+.hidden { display:none; }
+#topBubble {
+position:fixed;
+top:20px;
+left:auto;
+transform:none;
+background:transparent;
+color:#222;
+padding:6px 8px;
+border-radius:0;
+font-weight:700;
+font-size:28px;
+text-align:left;
+box-shadow:none;
+z-index:40;
+	white-space:normal;
+	word-wrap:break-word;
+	word-break:break-word;
+	max-width:60vw;
+}
+.heart
+{
+position:fixed;
+pointer-events:none;
+font-size:18px;
+line-height:1;
+transform:translate(-50%,-50%) scale(1);
+will-change:transform,opacity;
+opacity:0;
+animation:heartRise 900ms forwards cubic-bezier(.2,.9,.2,1);
+text-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+.fade-text
+{
+position:fixed;
+pointer-events:none;
+left:0;
+top:0;
+transform:translate(-50%,-50%);
+background:transparent;
+color:#111;
+padding:0 6px;
+border-radius:0;
+font-weight:700;
+text-shadow:0 2px 6px rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.25);
+animation:fadeUp 1200ms forwards ease-out;
+z-index:2100;
+}
+@keyframes fadeUp
+{
+0%{opacity:1; transform:translate(-50%,-50%) translateY(0) scale(1)}
+60%{opacity:1; transform:translate(-50%,-50%) translateY(-28px) scale(1.02)}
+100%{opacity:0; transform:translate(-50%,-50%) translateY(-60px) scale(0.98)}
+}
+@keyframes heartRise
+{
+0%
+{
+transform:translate(-50%,-50%) translateY(0) scale(0.9);
+opacity:1;
+}
+60%
+{
+transform:translate(-50%,-50%) translateY(-60px) scale(1.15);
+opacity:1;
+}
+100%
+{
+transform:translate(-50%,-50%) translateY(-120px) scale(0.85);
+opacity:0;
+}
+}
+.hint
+{
+position:fixed;
+left:10px;
+top:10px;
+color:#333;
+opacity:.9;
+}
+@media (max-width:600px)
+{
+html,body
+{
+background-attachment:scroll;
+}
+}
+</style>
+</head>
+<body>
+<div id="topBubble">si soy un lobo domesticado y que?, la neta iba a hacer una carta pero se me hizo bien poco original
+    asi que mejor me puse a hacer esta web aunque ni se que escribir aqui porque todo me da pena, 
+    pfff me la pase como 3 horas para poder poner 
+    las imagenes pd: si les das click cambia el color del fondo</div>
+<img id="kirbyIdle" src="kirby-idle-animation-by-hextupleyoodot.gif" alt="Kirby idle" class="kirby">
+<img id="staticBelow" class="static-img" src="Captura%20desde%202026-02-18%2002-35-10.png" alt="">
+<img id="kirbyMain" src="kirby.gif" alt="Kirby" class="kirby">
+<img class="stack-img" src="Captura%20desde%202026-02-18%2000-15-30.png" alt="" data-fade-text="Kirby guapa">
+<img class="stack-img" src="Captura%20desde%202026-02-18%2000-16-03.png" alt="" data-fade-text="Kirby divine">
+<img class="stack-img" src="Captura%20desde%202026-02-18%2000-16-20.png" alt="" data-fade-text="Kirby mi mujer">
+<img class="stack-img" src="Captura%20desde%202026-02-18%2000-16-56.png" alt="" data-fade-text="ya me dio pena">
+<script>
+(function()
+{
+var imgs = Array.from(document.querySelectorAll('img.stack-img'));
+var topZ = 200;
+function placeStackLeftToRight()
+{
+var vw = window.innerWidth;
+var baseLeft = Math.round(vw * 0.06);
+var gap = Math.round(vw * 0.09);
+imgs.forEach(function(img,i)
+{
+img.style.position = 'fixed';
+img.style.opacity = '0.75';
+img.style.cursor = 'pointer';
+img.style.transition = 'left 0.35s ease, top 0.35s ease, transform 0.45s cubic-bezier(.2,.9,.2,1), box-shadow 0.35s ease';
+img.style.zIndex = 60 + i;
+var rect = img.getBoundingClientRect();
+var w = rect.width || img.naturalWidth || Math.min(300,vw * 0.2);
+var h = rect.height || img.naturalHeight || Math.min(300,window.innerHeight * 0.2);
+var left = baseLeft + i * gap;
+var top = Math.max(8, Math.round((window.innerHeight - h) / 2) + Math.round((i - (imgs.length - 1) / 2) * 8));
+if(left + w > vw - 8)
+{
+left = Math.max(8,vw - w - 8 - (imgs.length - 1 - i) * 12);
+}
+img.style.left = left + 'px';
+img.style.top = top + 'px';
+});
+}
+function spawnHearts(x,y,count)
+{
+count = count || 8;
+for(var i = 0; i < count; i++)
+{
+	var heart = document.createElement('div');
+	heart.className = 'heart';
+	var icons = ['💖','💗','💘','💕'];
+	heart.textContent = icons[Math.floor(Math.random() * icons.length)];
+	var drift = Math.round((Math.random() - 0.5) * 80);
+	heart.style.left = (x + drift) + 'px';
+	heart.style.top = (y + Math.round((Math.random() - 0.5) * 10)) + 'px';
+	heart.style.fontSize = (12 + Math.floor(Math.random() * 18)) + 'px';
+	heart.style.zIndex = 2000;
+	document.body.appendChild(heart);
+	heart.addEventListener('animationend', function()
+	{
+		heart.remove();
+	});
+}
+}
+function showFadingText(text, x, y)
+{
+	var t = document.createElement('div');
+	t.className = 'fade-text';
+	t.textContent = text || '';
+	t.style.left = (x || window.innerWidth/2) + 'px';
+	t.style.top = (y || window.innerHeight/2) + 'px';
+	document.body.appendChild(t);
+	t.addEventListener('animationend', function()
+	{
+		t.remove();
+	});
+}
+function sampleAndSetBackground(img)
+{
+var cvs = document.createElement('canvas');
+var w = img.naturalWidth || img.width || 100;
+var h = img.naturalHeight || img.height || 100;
+cvs.width = Math.min(64,w);
+cvs.height = Math.min(64,h);
+var ctx = cvs.getContext('2d');
+ctx.drawImage(img,0,0,cvs.width,cvs.height);
+try
+{
+var data = ctx.getImageData(Math.floor(cvs.width / 2),Math.floor(cvs.height / 2),1,1).data;
+var r = data[0];
+var g = data[1];
+var b = data[2];
+document.body.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+catch(e)
+{
+}
+}
+var pending = imgs.length;
+imgs.forEach(function(img)
+{
+function onLoad()
+{
+pending--;
+if(pending <= 0)
+{
+placeStackLeftToRight();
+}
+}
+if(!img.complete)
+{
+img.addEventListener('load',onLoad,{once:true});
+}
+else
+{
+setTimeout(onLoad,10);
+}
+});
+imgs.forEach(function(img)
+{
+img.addEventListener('click',function(e)
+{
+var x = e.clientX || window.innerWidth / 2;
+var y = e.clientY || window.innerHeight / 2;
+topZ++;
+img.style.zIndex = topZ;
+img.style.transform = 'scale(1.12)';
+img.classList.add('front');
+setTimeout(function()
+{
+img.style.transform = 'scale(1.02)';
+},180);
+spawnHearts(x,y,10);
+sampleAndSetBackground(img);
+	showFadingText(img.dataset.fadeText || img.alt || img.src.split('/').pop().split('.')[0], x, y - 24);
+});
+img.addEventListener('touchstart',function(e)
+{
+e.preventDefault();
+var t = e.touches && e.touches[0];
+var x = t ? t.clientX : window.innerWidth / 2;
+var y = t ? t.clientY : window.innerHeight / 2;
+topZ++;
+img.style.zIndex = topZ;
+img.style.transform = 'scale(1.12)';
+img.classList.add('front');
+setTimeout(function()
+{
+img.style.transform = 'scale(1.02)';
+},180);
+spawnHearts(x,y,10);
+sampleAndSetBackground(img);
+	showFadingText(img.dataset.fadeText || img.alt || img.src.split('/').pop().split('.')[0], x, y - 24);
+},{passive:false});
+img.tabIndex = 0;
+img.addEventListener('keyup',function(e)
+{
+if(e.key === 'Enter' || e.key === ' ')
+{
+var rect = img.getBoundingClientRect();
+var x = rect.left + rect.width / 2;
+var y = rect.top + rect.height / 2;
+topZ++;
+img.style.zIndex = topZ;
+img.classList.add('front');
+spawnHearts(x,y,10);
+sampleAndSetBackground(img);
+	showFadingText(img.dataset.fadeText || img.alt || img.src.split('/').pop().split('.')[0], x, y - 24);
+}
+});
+});
+var resizeTimer = null;
+function handleResize()
+{
+clearTimeout(resizeTimer);
+resizeTimer = setTimeout(function()
+{
+placeStackLeftToRight();
+},150);
+}
+window.addEventListener('resize',handleResize);
+window.addEventListener('orientationchange',handleResize);
+placeStackLeftToRight();
+
+var gifs = [document.getElementById('kirbyIdle'), document.getElementById('kirbyMain')];
+
+var kirbyAudio = null;
+try
+{
+	kirbyAudio = new Audio('vc_kirby_copy_donkey_01.wav');
+	kirbyAudio.preload = 'auto';
+    kirbyAudio.volume = 0.2;
+}
+catch(e)
+{
+	kirbyAudio = null;
+}
+
+function placeRandomGif(img)
+{
+	var vw = window.innerWidth;
+	var vh = window.innerHeight;
+	var rect = img.getBoundingClientRect();
+	var w = rect.width || img.naturalWidth || 100;
+	var h = rect.height || img.naturalHeight || 100;
+	var maxLeft = Math.max(8, vw - w - 8);
+	var maxTop = Math.max(8, vh - h - 8);
+	var left = Math.round(Math.random() * maxLeft);
+	var top = Math.round(Math.random() * maxTop);
+	img.style.position = 'fixed';
+	img.style.left = left + 'px';
+	img.style.top = top + 'px';
+	img.style.zIndex = 140;
+}
+
+gifs.forEach(function(g)
+{
+	if(!g)
+	{
+		return;
+	}
+	function onLoad()
+	{
+		placeRandomGif(g);
+	}
+	if(!g.complete)
+	{
+		g.addEventListener('load', onLoad, { once: true });
+	}
+	else
+	{
+		setTimeout(onLoad, 10);
+	}
+	g.addEventListener('click', function(e)
+	{
+		var x = e.clientX || window.innerWidth / 2;
+		var y = e.clientY || window.innerHeight / 2;
+		placeRandomGif(g);
+		spawnHearts(x, y, 8);
+		if(kirbyAudio)
+		{
+			try
+			{
+				kirbyAudio.currentTime = 0;
+				kirbyAudio.play();
+			}
+			catch(err)
+			{
+			}
+		}
+	});
+	g.addEventListener('touchstart', function(e)
+	{
+		e.preventDefault();
+		var t = e.touches && e.touches[0];
+		var x = t ? t.clientX : window.innerWidth / 2;
+		var y = t ? t.clientY : window.innerHeight / 2;
+		placeRandomGif(g);
+		spawnHearts(x, y, 8);
+		if(kirbyAudio)
+		{
+			try
+			{
+				kirbyAudio.currentTime = 0;
+				kirbyAudio.play();
+			}
+			catch(err)
+			{
+			}
+		}
+	}, { passive: false });
+});
+
+function positionTopBubble()
+{
+	var bubble = document.getElementById('topBubble');
+	if(!bubble)
+	{
+		return;
+	}
+	var stack = Array.from(document.querySelectorAll('img.stack-img'));
+	var maxRight = 0;
+	stack.forEach(function(it)
+	{
+		var r = it.getBoundingClientRect().right;
+		if(r > maxRight)
+		{
+			maxRight = r;
+		}
+	});
+	var vw = window.innerWidth;
+		var bw = bubble.getBoundingClientRect().width || 220;
+		var minLeft = Math.round(vw * 0.06);
+		var maxLeft = Math.max(minLeft, vw - bw - 30
+        );
+		if(maxRight > 0)
+		{
+			var desired = maxRight + 12;
+			var left = Math.min(Math.max(desired, minLeft), maxLeft);
+			bubble.style.left = left + 'px';
+			bubble.style.transform = 'none';
+			var avail = Math.max(80, vw - left - 12);
+			bubble.style.maxWidth = avail + 'px';
+		}
+		else
+		{
+			bubble.style.left = minLeft + 'px';
+			bubble.style.transform = 'none';
+			var avail = Math.max(80, vw - minLeft - 12);
+			bubble.style.maxWidth = avail + 'px';
+		}
+}
+
+window.addEventListener('resize', positionTopBubble);
+window.addEventListener('orientationchange', positionTopBubble);
+setTimeout(positionTopBubble, 50);
+
+function positionStaticBelow()
+{
+	var s = document.getElementById('staticBelow');
+	var bubble = document.getElementById('topBubble');
+	if(!s || !bubble)
+	{
+		return;
+	}
+	var bRect = bubble.getBoundingClientRect();
+	var vw = window.innerWidth;
+	var sw = s.getBoundingClientRect().width || Math.min(160, vw * 0.18);
+	var left = Math.min(Math.max(bRect.left, 12), vw - sw - 12);
+	var top = Math.round(bRect.bottom + 8);
+	s.style.left = left + 'px';
+	s.style.top = top + 'px';
+}
+window.addEventListener('resize', positionStaticBelow);
+window.addEventListener('orientationchange', positionStaticBelow);
+setTimeout(positionStaticBelow, 80);
+
+var bgAudio = null;
+try
+{
+	bgAudio = new Audio('kirbycam.mp3');
+	bgAudio.loop = true;
+	bgAudio.volume = 0.55;
+}
+catch(e)
+{
+	bgAudio = null;
+}
+
+function showBgPlayButton()
+{
+	if(document.getElementById('playBgBtn'))
+	{
+		return;
+	}
+	var btn = document.createElement('button');
+	btn.id = 'playBgBtn';
+	btn.textContent = '▶';
+	btn.style.position = 'fixed';
+	btn.style.left = '12px';
+	btn.style.bottom = '12px';
+	btn.style.zIndex = 2200;
+	btn.style.padding = '8px 12px';
+	btn.style.borderRadius = '8px';
+	btn.style.background = 'rgba(255,255,255,0.95)';
+	btn.style.border = '1px solid rgba(0,0,0,0.08)';
+	btn.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+	btn.style.fontWeight = '700';
+	btn.addEventListener('click', function()
+	{
+		if(!bgAudio)
+		{
+			return;
+		}
+		bgAudio.play().catch(function(){});
+		btn.remove();
+	});
+	document.body.appendChild(btn);
+}
+
+function tryPlayBg()
+{
+	if(!bgAudio)
+	{
+		return;
+	}
+	var p = bgAudio.play();
+	if(p !== undefined)
+	{
+		p.catch(function()
+		{
+			showBgPlayButton();
+		});
+	}
+}
+
+tryPlayBg();
+
+function onFirstGesture()
+{
+	if(bgAudio)
+	{
+		bgAudio.play().catch(function(){});
+	}
+	window.removeEventListener('pointerdown', onFirstGesture);
+	window.removeEventListener('touchstart', onFirstGesture);
+	window.removeEventListener('keydown', onFirstGesture);
+}
+window.addEventListener('pointerdown', onFirstGesture);
+window.addEventListener('touchstart', onFirstGesture);
+window.addEventListener('keydown', onFirstGesture);
+
+})();
+</script>
+</body>
+</html>
